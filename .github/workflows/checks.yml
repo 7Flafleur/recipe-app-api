@@ -17,6 +17,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3.5.3
 
+      - name: Install Node.js
+        run: |
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+
+
       - name: Test
         run: docker compose run --rm app sh -c "python manage.py test"
 
