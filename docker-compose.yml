@@ -1,4 +1,4 @@
-
+########### service : container that runs an image ###############
 
 services:
   app:
@@ -11,4 +11,31 @@ services:
     volumes:
       - ./app:/app
     command: >
-      sh -c "python manage.py runserver 0.0.0.0:8000"
+      sh -c "python manage.py runserver 0.0.0.0:8000"   
+    environment:
+      - DB_HOST=db ## as defined below
+      - DB_NAME = devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASS=changeme
+    depends_on:
+      - db           # wait for db service to start before starting app service
+
+
+
+
+  
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=changeme
+
+############### volumes: used to store persistent data####################
+
+volumes:
+  dev-db-data:
+
+################# custom network defined by docker##################
