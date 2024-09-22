@@ -15,8 +15,8 @@ services:
     environment:
       - DB_HOST=db ## as defined below
       - DB_NAME=devdb
-      - POSTGRES_USER=devuser
-      - POSTGRES_PASS=changeme
+      - DB_USER=devuser
+      - DB_PASS=changeme
     depends_on:
       - db           # wait for db service to start before starting app service
 
