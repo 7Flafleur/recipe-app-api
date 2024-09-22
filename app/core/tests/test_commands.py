@@ -23,3 +23,19 @@ class CommandTests(SimpleTestCase):
 
         patched_check.assert_called_once_with(database=['default'])
 
+    @patch('time.sleep')
+    def test_wait_for_db_delay(self,patched_sleep,patched_check):
+        """ arguments are passed from the inside out, sleep, then check"""
+        """ Test waiting for database when getting operational error."""
+        patched_check.side_effect = [Psycopg2OpError] * 2 + \
+            [OperationalError]*3 + [True]
+        """Call mocked method,first time, raise Psycop2Error twice, then raise OperationalError
+          three times, simulates errors when Postgresql starts but isn't readuy to connect"""
+        
+        call_command('wait_for_db')
+
+        self.assertEqual(patched_check.call_count,6)
+        patched_check.assert_called_with(database=['default'])
+    
+
+
