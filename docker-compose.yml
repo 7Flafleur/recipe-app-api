@@ -14,7 +14,7 @@ services:
       sh -c "python manage.py runserver 0.0.0.0:8000"   
     environment:
       - DB_HOST=db ## as defined below
-      - DB_NAME = devdb
+      - DB_NAME=devdb
       - POSTGRES_USER=devuser
       - POSTGRES_PASS=changeme
     depends_on:
