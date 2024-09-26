@@ -30,7 +30,6 @@ class UserAdmin(BaseUserAdmin):
     readonly_fields = ['last_login']
     add_fieldsets =(
         (None,{
-            """ custom css class"""
             'classes':('wide',),
             'fields':(
                 'email',
