@@ -1,5 +1,5 @@
 """
-URL mappings for the user API
+URL mappings for the USER API
 """
 
 from django.urls import path
@@ -9,4 +9,5 @@ app_name = 'user'
 
 urlpatterns = [
     path('create/',views.CreateUserView.as_view(),name='create'),
+    path('token/',views.CreateUserView.as_view(),name='token'),
 ]
