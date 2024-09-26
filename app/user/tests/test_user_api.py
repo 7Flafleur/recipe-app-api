@@ -35,7 +35,7 @@ class PublicUserApiTests(TestCase):
 
         self.assertEqual(res.status_code,status.HTTP_201_CREATED)
         user = get_user_model().objects.get(email = payload['email'])
-        self.assertTrue(user.user_check_password(payload['password']))
+        self.assertTrue(user.check_password(payload['password']))
         self.assertNotIn('password',res.data)
 
     def test_user_with_email_exists_error(self):
@@ -46,7 +46,6 @@ class PublicUserApiTests(TestCase):
             'password' : 'testpass123',
             'name':'Test Name',
         }
-
         create_user(**payload)
         res = self.client.post(CREATE_USER_URL,payload)
 
@@ -57,14 +56,14 @@ class PublicUserApiTests(TestCase):
         payload = {
             'email': 'test@example.com',
             'password' : 'tes',
-            'name':'Test Name',
+            'name':'TestName',
         }
-
-        create_user(**payload)
         res = self.client.post(CREATE_USER_URL,payload)
+
+
         self.assertEqual(res.status_code,status.HTTP_400_BAD_REQUEST)
         user_exists = get_user_model().objects.filter(
             email =payload['email']
-        ).exists
+        ).exists()
         self.assertFalse(user_exists)
 
