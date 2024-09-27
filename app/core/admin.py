@@ -48,3 +48,4 @@ class UserAdmin(BaseUserAdmin):
 
 """ Apply UserAdmin model for display"""
 admin.site.register(models.User,UserAdmin)
+admin.site.register(models.Recipe)
