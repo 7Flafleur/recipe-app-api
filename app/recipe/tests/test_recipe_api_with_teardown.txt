@@ -1,0 +1,109 @@
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework import status
+
+from core.models import Recipe
+from recipe.serializers import RecipeSerializer
+
+def create_user(**params):
+    return get_user_model().objects.create_user(**params)
+
+def create_recipe(user, **params):
+    defaults = {
+        'title': 'Sample recipe',
+        'time_minutes': 10,
+        'price': 5.00,
+    }
+    defaults.update(params)
+    return Recipe.objects.create(user=user, **defaults)
+
+def detail_url(recipe_id):
+    """Return recipe detail URL"""
+    return reverse('recipe:recipe-detail', args=[recipe_id])
+
+class PublicRecipeApiTests(TestCase):
+    """Test unauthenticated recipe API access"""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        """Test that authentication is required"""
+        res = self.client.get(reverse('recipe:recipe-list'))
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class PrivateRecipeApiTests(TestCase):
+    """Test authenticated recipe API access"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_user(email='test@example.com', password='testpass')
+
+    def tearDown(self):
+        """Clean up after each test method."""
+        self.client.logout()
+
+    def test_retrieve_recipes(self):
+        """Test retrieving a list of recipes"""
+        self.client.force_authenticate(user=self.user)
+        create_recipe(user=self.user)
+        create_recipe(user=self.user)
+
+        res = self.client.get(reverse('recipe:recipe-list'))
+
+        recipes = Recipe.objects.all().order_by('-id')
+        serializer = RecipeSerializer(recipes, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_recipes_limited_to_user(self):
+        """Test retrieving recipes for user"""
+        self.client.force_authenticate(user=self.user)
+        user2 = create_user(email='other@example.com', password='password123')
+        create_recipe(user=user2)
+        create_recipe(user=self.user)
+
+        res = self.client.get(reverse('recipe:recipe-list'))
+
+        recipes = Recipe.objects.filter(user=self.user)
+        serializer = RecipeSerializer(recipes, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_delete_recipe(self):
+        """Test deleting a recipe successful."""
+        self.client.force_authenticate(user=self.user)
+        recipe = create_recipe(user=self.user)
+
+        url = detail_url(recipe.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Recipe.objects.filter(id=recipe.id).exists())
+
+    def test_delete_recipe_other_users_recipe_error(self):
+        """Test trying to delete another user's recipe gives error."""
+        new_user = create_user(email='user2@example.com', password='test123')
+        recipe = create_recipe(user=new_user)
+
+        url = detail_url(recipe.id)
+        self.client.force_authenticate(user=self.user)  # Authenticate as a different user
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Recipe.objects.filter(id=recipe.id).exists())
+
+    def test_delete_recipe_unauthenticated(self):
+        """Test that unauthenticated users cannot delete a recipe."""
+        recipe = create_recipe(user=self.user)
+
+        url = detail_url(recipe.id)
+        self.client.force_authenticate(user=None)  # Ensure client is unauthenticated
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(Recipe.objects.filter(id=recipe.id).exists())
